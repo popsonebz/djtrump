@@ -51,3 +51,80 @@ Save and quit. Then, source this file for our changes to take effect:
 source ~/.bash_profile
 ```
 Now, try to migrate. Most probably, it will fail and say something like this:
+```
+FATAL:  Peer authentication failed for user "djtrumpuser"
+```
+That's because, postgresl uses peer authentication by default, which is it will succeed if the user with the same name as the postgres user uses it. In our case, there is no djtrumpuser user in postgres and thus it fails. To fix it, go to /etc/postgresql/9.5/main/pg_hba.conf and change the line that says this:
+```
+local   all     all      peer
+```
+to this:
+```
+local   all     all      md5
+```
+Save and quit. This way, postgres will try to use password to authenticate the user. Now, restart postgresql for our changes to take effect:
+```
+sudo service postgresl restart
+```
+Go ahead and migrate:
+```
+python manage.py migrate
+```
+It works now. Cool! Try to run the development server and it will work.
+# configuring nginx
+Create a new file: /etc/nginx/sites-available/djtrump and add the following:
+```
+server {
+    listen 80;
+    server_name your_ip;
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+
+    location /static/ {
+            alias /root/djtrump/static/;
+    }
+
+    location / {
+            include proxy_params;
+            proxy_pass http://your_ip:8030;
+    }
+}
+```
+Replace your_ip with the IP address of your server. We know what this is doing from the previous tutorials. Basically, it is serving the static files from /root/djtrump/static/ and redirecting http requests to gunicorn which should be running on port 8030.
+
+Now, let's enable this file by linking it to the sites-enabled folder:
+```
+sudo ln -s /etc/nginx/sites-available/djtrump /etc/nginx/sites-enabled
+```
+Restart nginx:
+```
+sudo service nginx restart
+```
+There are two more things that we need to do before nginx works. First, we need to put all our static files in the folder /root/djtrump/static/ and run gunicorn on port 8030 as we promised in nginx config file.
+
+First, run this to gather all static files in that folder:
+
+```
+python manage.py collectstatic --noinput
+```
+Now, run gunicorn:
+
+```
+gunicorn --workers 3 --bind 0.0.0.0:8030 djtrump.wsgi
+```
+
+Go ahead and type in the browser the IP of your address. You will see that the app is running. Congratulations!
+
+Please note that if you cloned the app to the user's home directory, you may face issues with static files (Permission denied error). One of the ways to solve it to run nginx as root. To do that, open /etc/nginx/nginx.conf and change the line that says:
+```
+user www-data;
+```
+to this:
+```
+user root;
+```
+and restart the nginx:
+```
+sudo service nginx restart
+```
+# configuring supervisor
