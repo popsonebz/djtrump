@@ -153,3 +153,13 @@ If you go to the app in the browser, it will respond with 502 (Bad Gateway) resp
 sudo supervisorctl start djtrump
 ```
 Go to the app and you will see it working!
+
+# STILL ON THIS SERVER
+## Install jenkins
+```
+wget -q -O - https://pkg.jenkins.io/debian/jenkins-ci.org.key | sudo apt-key add -
+sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+sudo apt-get update
+sudo apt-get upgrade
+sudo apt-get install jenkins
+```
