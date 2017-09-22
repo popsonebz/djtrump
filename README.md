@@ -128,3 +128,28 @@ and restart the nginx:
 sudo service nginx restart
 ```
 # configuring supervisor
+Create /etc/supervisor/conf.d/djtrump.conf and type in the following:
+```
+[program:djtrump]
+command=/root/djtrumpenv/bin/gunicorn --workers 3 --bind 0.0.0.0:8030 djtrump.wsgi
+directory=/root/djtrump
+autostart=true
+autorestart=true
+stderr_logfile=/var/log/djtrump.err.log
+stdout_logfile=/var/log/djtrump.out.log
+```
+Restart, reread and update the supervisor:
+```
+sudo service supervisor restart
+sudo supervisorctl reread
+sudo supervisorctl update
+```
+Now, you can stop, start and restart your app easily! Try this:
+```
+sudo supervisorctl stop djtrump
+```
+If you go to the app in the browser, it will respond with 502 (Bad Gateway) response. Go ahead and start it:
+```
+sudo supervisorctl start djtrump
+```
+Go to the app and you will see it working!
